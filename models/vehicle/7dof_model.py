@@ -5,48 +5,67 @@ from models.vehicle.base_model import BaseVehicleModel
 from models.tires.registry import TIRE_MODEL_REGISTRY
 from dataclasses import asdict
 
+from dataclasses import dataclass
+
 @dataclass
 class VehiclePhysicalParams7DOF:
-    g: float
-    m: float
-    lf: float
-    lr: float
-    h: float
-    L1: float
-    L2: float
-    r: float
-    iz: float
-    ir: float
-    ra: float
-    s: float
-    cx: float
+    """
+    Physical parameters for a 7-DOF vehicle model.
+    """
+
+    g: float  # [m/s²] Gravity acceleration
+    m: float  # [kg] Vehicle mass
+    lf: float  # [m] Distance from CG to front axle
+    lr: float  # [m] Distance from CG to rear axle
+    h: float  # [m] Height of the center of gravity
+    L1: float  # [m] Distance from CG to front wheel center (longitudinal)
+    L2: float  # [m] Distance from CG to rear wheel center (longitudinal)
+    r: float  # [m] Wheel radius
+    iz: float  # [kg·m²] Yaw moment of inertia
+    ir: float  # [kg·m²] Wheel rotational inertia
+    ra: float  # [N·s/m] Aerodynamic drag coefficient
+    s: float  # [m²] Frontal area
+    cx: float  # [-] Air drag coefficient
 
     @property
-    def l(self):
+    def l(self) -> float:
+        """[m] Total wheelbase (lf + lr)"""
         return self.lf + self.lr
 
     @property
-    def L(self):
+    def L(self) -> float:
+        """[m] Total wheelbase (L1 + L2) — for alternative reference frame"""
         return self.L1 + self.L2
 
     @property
-    def fz012(self):
+    def fz012(self) -> float:
+        """
+        [N] Static vertical load on front axle (shared by front-left and front-right tires)
+        Computed using static weight transfer assumption.
+        """
         return (self.m * self.lr * self.g) / (2 * self.l)
 
     @property
-    def fz034(self):
+    def fz034(self) -> float:
+        """
+        [N] Static vertical load on rear axle (shared by rear-left and rear-right tires)
+        Computed using static weight transfer assumption.
+        """
         return (self.m * self.lf * self.g) / (2 * self.l)
 
     @property
-    def m_inv(self):
+    def m_inv(self) -> float:
+        """[1/kg] Inverse of vehicle mass"""
         return 1 / self.m
 
     @property
-    def iz_inv(self):
+    def iz_inv(self) -> float:
+        """[1/kg·m²] Inverse of yaw inertia"""
         return 1 / self.iz
 
     @property
-    def ir_inv(self):
+    def ir_inv(self) -> float:
+        """[1/kg·m²] Inverse of wheel inertia"""
         return 1 / self.ir
 
 @dataclass
@@ -112,7 +131,6 @@ class DOF7(BaseVehicleModel):
         self.n_inputs: int = 6
         self.params = params
 
-    # def __init__(self, parameters):
         for key, value in asdict(params.vehicle).items():
             setattr(self, key, value)
         self.fz012 = params.vehicle.fz012
