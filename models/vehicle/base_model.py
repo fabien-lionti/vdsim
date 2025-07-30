@@ -6,25 +6,6 @@ class BaseVehicleModel(ABC):
     def __init__(self, params):
         self.params = params
 
-    # @abstractmethod
-    # def get_state_derivative(
-    #     self,
-    #     state: Union[np.ndarray, list],
-    #     control: Union[np.ndarray, list]
-    # ) -> np.ndarray:
-    #     """
-    #     Compute the time derivative of the vehicle state vector 
-    #     given the current state and control inputs.
-
-    #     Args:
-    #         state (Union[np.ndarray, list]): Current state vector, shape (n_states,)
-    #         control (Union[np.ndarray, list]): Control input vector, shape (n_inputs,)
-
-    #     Returns:
-    #         np.ndarray: Time derivative of the state vector, shape (n_states,)
-    #     """
-    #     pass
-
     @staticmethod
     def get_slipping_angle(vx: float, vy: float, delta: float) -> float:
         """
@@ -89,3 +70,44 @@ class BaseVehicleModel(ABC):
                 return -1.0
             sigma = (wr - vxp) / abs(vxp)
             return max(sigma, -1.0)
+        
+    def get_dx__dt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        pass
+        
+    def euler_integration(self, x0, u: np.ndarray, time_array: np.ndarray) -> np.ndarray:
+        """
+        Perform Euler integration with time-varying control inputs.
+
+        Args:
+            x0: Initial state (np.ndarray)
+            u: Control input array of shape (T, n_inputs)
+            time_array: Time vector of shape (T,)
+
+        Returns:
+            Trajectory: np.ndarray of shape (T, n_states)
+        """
+        dt = time_array[1] - time_array[0]
+        x = np.array(x0, dtype=float)
+        traj = [x.copy()]
+
+        for i in range(1, len(time_array)):
+            control_i = u[i - 1]
+            dx = self.get_dx__dt(x, control_i)
+            x += dt * np.asarray(dx)
+            traj.append(x.copy())
+
+        return np.stack(traj)
+
+
+    def rk4_integration(self, x0, u, time_array):
+        dt = time_array[1] - time_array[0]
+        x = np.array(x0)
+        traj = [x.copy()]
+        for _ in time_array[1:]:
+            k1 = self.get_state_derivative(x, u)
+            k2 = self.get_state_derivative(x + 0.5 * dt * k1, u)
+            k3 = self.get_state_derivative(x + 0.5 * dt * k2, u)
+            k4 = self.get_state_derivative(x + dt * k3, u)
+            x += (dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
+            traj.append(x.copy())
+        return np.stack(traj)

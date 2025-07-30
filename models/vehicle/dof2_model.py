@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from models.vehicle.base_model import BaseVehicleModel
 from models.tires.registry import TIRE_MODEL_REGISTRY
 from dataclasses import asdict
-
 from dataclasses import dataclass
 
 @dataclass
@@ -236,7 +235,7 @@ if __name__ == "__main__":
         L1=1.0, L2=1.6, r=0.3, iz=2500.0, ir=1.2,
         ra=0.015, s=0.01, cx=0.3
     )
-
+    
     tire_params = {
         "model": "linear",
         "Cx": 80000.0,

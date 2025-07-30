@@ -1,0 +1,1 @@
+from models.tires.registry import *
