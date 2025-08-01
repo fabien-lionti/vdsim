@@ -5,6 +5,7 @@ from models.vehicle.base_model import BaseVehicleModel
 from models.tires.registry import TIRE_MODEL_REGISTRY
 from dataclasses import asdict
 from dataclasses import dataclass
+import matplotlib.pyplot as plt
 
 @dataclass
 class VehiclePhysicalParams7DOF:
@@ -231,9 +232,19 @@ class DOF7(BaseVehicleModel):
 if __name__ == "__main__":
 
     vehicle_params = VehiclePhysicalParams7DOF(
-        g=9.81, m=1500, lf=1.2, lr=1.6, h=0.5,
-        L1=1.0, L2=1.6, r=0.3, iz=2500.0, ir=1.2,
-        ra=0.015, s=0.01, cx=0.3
+        g=9.81, 
+        m=1500, 
+        lf=1.2, 
+        lr=1.6, 
+        h=0.5,
+        L1=1.0, 
+        L2=1.6, 
+        r=0.3, 
+        iz=2500.0, 
+        ir=1.2,
+        ra=0.015, 
+        s=0.01, 
+        cx=0.3
     )
     
     tire_params = {
@@ -253,7 +264,34 @@ if __name__ == "__main__":
     # Instantiate the model
     model = DOF7(config)
 
-    # Optional: simulate a single step
-    state = np.array([0, 0, 0, 0, 0, 0, 10, 10, 10, 10])   # 10D state vector
-    control = np.array([0, 0, 0, 0, 0, 0])                  # 6D input vector
-    dx__dt = model.get_dx__dt(state, control)
+    initial_state = np.array([0, 20, 0, 0, 0, 0, 10, 10, 10, 10])   # 10D state vector
+    dt = 0.0005
+    sim_time = 10.0
+    time_array = np.arange(0, sim_time, dt)
+
+    # Control vector for a single time step
+    tf = 0 # Drive torque (front) [Nm]
+    tr = 0 # Drive torque (rear) [Nm]
+    df = 0.01 # Front steering angle δf [rad]
+    dr = 0
+    control_input = np.array([tf, tf, tr, tr, df, dr])
+
+    # Expand to match time steps
+    u_array = np.tile(control_input, (len(time_array), 1))  # shape: (T, 6)
+
+    trajectory = model.euler_integration(initial_state, u_array, time_array)
+
+    x = trajectory[:, 0]
+    vx = trajectory[:, 1]
+    y = trajectory[:, 2]
+    vy = trajectory[:, 3]
+    psi = trajectory[:, 4]
+    psidt = trajectory[:, 5]
+    w1 = trajectory[:, 6]
+    w2 = trajectory[:, 7]
+    w3 = trajectory[:, 8]
+    w4 = trajectory[:, 9]
+
+    plt.figure(figsize=(12, 8))
+    plt.plot(time_array, psidt, label='Vy')
+    plt.show()

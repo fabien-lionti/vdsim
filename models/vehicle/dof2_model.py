@@ -228,6 +228,105 @@ class DOF7(BaseVehicleModel):
         self.get_state_derivatives(vx, vy, self.fx1, self.fx2, self.fx3, self.fx4, self.fy1, self.fy2, self.fy3, self.fy4, fxp1, fxp2, fxp3, fxp4, psi, psidt, t1, t2, t3, t4, faero)
 
         return [self.xdt, self.vxdt, self.ydt, self.vydt, self.psidt, self.psidt2, self.omega1dt, self.omega2dt, self.omega3dt, self.omega4dt]
+
+class LateralBicycleModelWithPacejka:
+
+    def __init__(
+            self, 
+            mass,
+            lf, 
+            lr, 
+            iz, 
+            Byf, 
+            Cyf, 
+            Dyf,
+            Eyf, 
+            Byr, 
+            Cyr, 
+            Dyr,
+            Eyr
+            ):
+
+        # Set tire parameters
+        self.front_tire_model = PacejkaTireModel(Byf, Cyf, Dyf, Eyf, Bx=None, Cx=None, Dx=None, Ex=None)
+        self.rear_tire_model = PacejkaTireModel(Byr, Cyr, Dyr, Eyr, Bx=None, Cx=None, Dx=None, Ex=None)
+
+        # Set vehicle parameters
+        self.m = mass
+        self.lf = lf
+        self.lr = lr
+        self.iz = iz
+
+        self.af = 0
+        self.ar = 0
+
+        self.fzr = 0
+        self.fzf = 0
+    
+    def f_slip_angle(self, vy, vx, r, df):
+        '''Front slip angle'''
+        return np.arctan((vy + self.lf * r) / vx) - df
+    
+    def r_slip_angle(self, vy, vx, r):
+        '''Rear slip angle'''
+        return np.arctan((vy - self.lr * r) / vx)
+    
+    def get_derivatives(self, y0, t, vx, c):
+
+        r, vy, psi, _, _ = y0
+
+        # Compute slip angles
+        self.ayf = self.f_slip_angle(vy, vx, r, c)
+        self.ayr = self.r_slip_angle(vy, vx, r)
+
+        # Mass repartition 
+        self.fzr = (self.lf * self.m * 9.8) / (self.lr + self.lf)
+        self.fzf = (self.lr * self.m * 9.8) / (self.lr + self.lf)
+        
+        # Compute tire forces
+        fyf = -1 * self.front_tire_model.get_lateral_force(self.ayf, self.fzr)
+        fyr = -1 * self.rear_tire_model.get_lateral_force(self.ayr, self.fzf)
+        
+        vydt = (fyf / self.m) * np.cos(c) + (fyr / self.m) - vx * r
+        rdt = (self.lf / self.iz) * fyf * np.cos(c) - (self.lr / self.iz) * fyr
+        psidt = r
+        xdt = vx * np.cos(psi) - vy * np.sin(psi)
+        ydt = vx * np.sin(psi) + vy * np.cos(psi)
+
+        return [rdt, vydt, psidt, xdt, ydt]
+
+    def simulate(self, y0, time, vx, control):
+
+        var = []
+        sol = []
+
+        sol.append(y0)
+        var.append([self.af, self.ar, self.fzf, self.fzr])
+
+        y = odeint(self.get_derivatives, y0, time[0:2], args=(vx, control[0]))
+        
+        sol.append(y[-1])
+        var.append([self.af, self.ar, self.fzf, self.fzr])
+
+        for i in range(1, len(time)-1):
+            y = odeint(self.get_derivatives, y[-1], time[i:i+2], args=(vx, control[i]))
+            sol.append(y[-1])
+
+            var.append([self.ayf, self.ayr, self.fzf, self.fzr])
+        
+        var = np.asarray(var)
+        sol = np.asarray(sol)
+
+        r = sol[:,0] 
+        vy = sol[:,1]
+
+        ayf = var[:,0]
+        ayr = var[:,1] 
+        fzf = var[:,2] 
+        fzr = var[:,3] 
+
+        return r, vy, ayf, ayr, fzf, fzr
+
 if __name__ == "__main__":
 
     vehicle_params = VehiclePhysicalParams7DOF(

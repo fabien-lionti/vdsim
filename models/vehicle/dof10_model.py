@@ -32,16 +32,16 @@ class VehiclePhysicalParams10DOF:
         cx (float): Aerodynamic drag coefficient [-]
 
         Suspension stiffness [N/m]:
-        k0: Front-left
-        k1: Front-right
-        k2: Rear-left
-        k3: Rear-right
+        ks1: Front-left
+        ks2: Front-right
+        ks3: Rear-left
+        ks4: Rear-right
 
         Suspension damping [N·s/m]:
-        c0: Front-left
-        c1: Front-right
-        c2: Rear-left
-        c3: Rear-right
+        ds1: Front-left
+        ds2: Front-right
+        ds3: Rear-left
+        ds4: Rear-right
     """
 
     # Vehicle geometry & dynamics
@@ -152,17 +152,19 @@ class DOF10(BaseVehicleModel):
     """
     10 Degrees-of-Freedom Vehicle Model with Linear Tire Forces.
 
-    State vector (10):
+    State vector (16):
         x       - Global x-position [m]
         vx      - Longitudinal velocity [m/s]
         y       - Global y-position [m]
         vy      - Lateral velocity [m/s]
-        phi       - Roll angle [rad]
-        phidt     - Roll rate [rad/s]
-        theta     - Pitch angle [rad]
-        thetadt   - Pitch rate [rad/s]
-        psi       - Yaw angle [rad]
-        psidt     - Yaw rate [rad/s]
+        z       - Global z-position [m]
+        vz      - Vertical velocity [m/s]
+        phi     - Roll angle [rad]
+        phidt   - Roll rate [rad/s]
+        theta   - Pitch angle [rad]
+        thetadt - Pitch rate [rad/s]
+        psi     - Yaw angle [rad]
+        psidt   - Yaw rate [rad/s]
         omega1  - Wheel angular velocity FL [rad/s]
         omega2  - Wheel angular velocity FR [rad/s]
         omega3  - Wheel angular velocity RL [rad/s]
@@ -400,22 +402,6 @@ class DOF10(BaseVehicleModel):
 
 if __name__ == "__main__":
 
-    # vehicle_params = VehiclePhysicalParams10DOF(
-    #     g=9.81, 
-    #     m=1500, 
-    #     lf=1.2, 
-    #     lr=1.6, 
-    #     h=0.5,
-    #     L1=1.0, 
-    #     L2=1.6, 
-    #     r=0.3, 
-    #     iz=2500.0, 
-    #     ir=1.2,
-    #     ra=0.015, 
-    #     s=0.01, 
-    #     cx=0.3
-    # )
-
     vehicle_params = VehiclePhysicalParams10DOF(
         g=9.81,              # Gravité
         m=1500.0,            # Masse totale [kg]
@@ -470,10 +456,43 @@ if __name__ == "__main__":
     model = DOF10(config)
 
     # Optional: simulate a single step
-    state = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])   # 10D state vector
-    control = np.array([0, 0, 0, 0, 0, 0])                  # 6D input vector
-    dx__dt = model.get_dx__dt(state, control)
-
+    initial_state = np.array([0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])   # 10D state vector
     
+    dt = 0.0001
+    sim_time = 10.0
+    time_array = np.arange(0, sim_time, dt)
 
-    pass
+    # Control vector for a single time step
+    tf = 0 # Drive torque (front) [Nm]
+    tr = 0 # Drive torque (rear) [Nm]
+    df = 0.001 # Front steering angle δf [rad]
+    dr = 0
+    control_input = np.array([tf, tf, tr, tr, df, dr])
+
+    # Expand to match time steps
+    u_array = np.tile(control_input, (len(time_array), 1))  # shape: (T, 6)
+
+    import matplotlib.pyplot as plt
+
+    trajectory = model.euler_integration(initial_state, u_array, time_array)
+    
+    x = trajectory[:, 0]
+    vx = trajectory[:, 1]
+    y = trajectory[:, 2]
+    vy = trajectory[:, 3]
+    z = trajectory[:, 4]
+    vz = trajectory[:, 5]
+    phi = trajectory[:, 6]
+    phidt = trajectory[:, 7]
+    theta = trajectory[:, 8]
+    thetadt = trajectory[:, 9]
+    psi = trajectory[:, 10]
+    psidt = trajectory[:, 11]
+    w1 = trajectory[:, 12]
+    w2 = trajectory[:, 13]
+    w3 = trajectory[:, 14]
+    w4 = trajectory[:, 15]
+
+    plt.figure(figsize=(12, 8))
+    plt.plot(x, y, label='vx')
+    plt.show()
