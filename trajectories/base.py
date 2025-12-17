@@ -1,35 +1,41 @@
+# trajectories/base.py
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 import numpy as np
 
-def straight_line(length=100, dt=0.1, vx=10.0):
-    T = int(length / (vx * dt))
-    x = np.linspace(0, length, T)
-    y = np.zeros_like(x)
-    psi = np.zeros_like(x)
-    return np.vstack([x, y, psi]).T
+@dataclass
+class TrajectoryPoint:
+    t: float
+    x: float
+    y: float
+    psi: float      # heading [rad]
+    v: float        # ref speed [m/s]
+    kappa: float  # curvature [1/m], optionnel
 
-def circular(radius=20, v=10.0, dt=0.1):
-    omega = v / radius
-    T = int((2 * np.pi * radius) / (v * dt))
-    t = np.arange(T) * dt
-    x = radius * np.cos(omega * t)
-    y = radius * np.sin(omega * t)
-    psi = omega * t
-    return np.vstack([x, y, psi]).T
+    def to_dict(self) -> dict:
+        return dict(t=self.t, x=self.x, y=self.y, psi=self.psi, v=self.v, kappa=self.kappa)
 
-def sinusoidal(amplitude=5, wavelength=20, vx=10.0, total_time=10.0, dt=0.1):
-    t = np.arange(0, total_time, dt)
-    x = vx * t
-    y = amplitude * np.sin(2 * np.pi * x / wavelength)
-    dy_dx = (2 * np.pi * amplitude / wavelength) * np.cos(2 * np.pi * x / wavelength)
-    psi = np.arctan(dy_dx)
-    return np.vstack([x, y, psi]).T
+class BaseTrajectory(ABC):
+    """Abstract base class for reference trajectories."""
 
-def lemniscate(a=20, vx=10.0, dt=0.1, total_time=20):
-    t = np.arange(0, total_time, dt)
-    omega = 2 * np.pi / total_time
-    x = a * np.sin(omega * t)
-    y = a * np.sin(omega * t) * np.cos(omega * t)
-    dx = a * omega * np.cos(omega * t)
-    dy = a * omega * (np.cos(2 * omega * t) - np.sin(2 * omega * t)) / 2
-    psi = np.arctan2(dy, dx)
-    return np.vstack([x, y, psi]).T
+    @abstractmethod
+    def sample(self, t: float) -> TrajectoryPoint:
+        """Return reference at time t."""
+        pass
+
+    def sample_array(self, time_array: np.ndarray) -> np.ndarray:
+        """
+        Retourne un tableau numpy de forme (N, 6):
+        [t, x, y, psi, v, kappa]
+        """
+        return np.array([
+            [
+                tp.t,
+                tp.x,
+                tp.y,
+                tp.psi,
+                tp.v,
+                tp.kappa,
+            ]
+            for tp in (self.sample(float(t)) for t in time_array)
+        ])

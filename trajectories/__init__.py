@@ -1,5 +1,20 @@
-from .base import straight_line, circular, sinusoidal, lemniscate
-from .utils import find_nearest_point, find_lookahead_point
+# trajectories/__init__.py
 
-__all__ = ["straight_line", "circular", "sinusoidal", "lemniscate",
-           "find_nearest_point", "find_lookahead_point"]
+from .base import BaseTrajectory, TrajectoryPoint
+from .library import (
+    StraightTrajectory,
+    SlalomTrajectory,
+    DoubleLaneChangeTrajectory,
+    CircleTrajectory,
+    LemniscateTrajectory
+)
+
+__all__ = [
+    "BaseTrajectory",
+    "TrajectoryPoint",
+    "StraightTrajectory",
+    "SlalomTrajectory",
+    "DoubleLaneChangeTrajectory",
+    "CircleTrajectory",
+    "LemniscateTrajectory"
+]

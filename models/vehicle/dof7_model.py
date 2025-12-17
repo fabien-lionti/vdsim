@@ -11,6 +11,21 @@ import matplotlib.pyplot as plt
 class VehiclePhysicalParams7DOF:
     """
     Physical parameters for a 7-DOF vehicle model.
+
+    Attributes:
+        g (float): Gravity acceleration [m/s²].
+        m (float): Vehicle mass [kg].
+        lf (float): Distance from the center of gravity (CG) to the front axle [m].
+        lr (float): Distance from the CG to the rear axle [m].
+        h (float): Height of the CG above the ground [m].
+        L1 (float): Distance from the CG to the left lateral wheel [m].
+        L2 (float): Distance from the CG to the right lateral wheel [m].
+        r (float): Wheel radius [m].
+        iz (float): Yaw moment of inertia about the vertical axis [kg·m²].
+        ir (float): Wheel rotational inertia [kg·m²].
+        ra (float): Aerodynamic drag coefficient [N·s/m].
+        s (float): Frontal area [m²].
+        cx (float): Air drag coefficient [-].
     """
 
     g: float  # [m/s²] Gravity acceleration
@@ -18,8 +33,8 @@ class VehiclePhysicalParams7DOF:
     lf: float  # [m] Distance from CG to front axle
     lr: float  # [m] Distance from CG to rear axle
     h: float  # [m] Height of the center of gravity
-    L1: float  # [m] Distance from CG to front wheel center (longitudinal)
-    L2: float  # [m] Distance from CG to rear wheel center (longitudinal)
+    L1: float  # Distance from the CG to the left lateral wheel [m].
+    L2: float  # Distance from the CG to the right lateral wheel [m].
     r: float  # [m] Wheel radius
     iz: float  # [kg·m²] Yaw moment of inertia
     ir: float  # [kg·m²] Wheel rotational inertia
@@ -34,7 +49,7 @@ class VehiclePhysicalParams7DOF:
 
     @property
     def L(self) -> float:
-        """[m] Total wheelbase (L1 + L2) — for alternative reference frame"""
+        """[m] Total lateral wheelbase (L1 + L2)"""
         return self.L1 + self.L2
 
     @property
@@ -68,29 +83,72 @@ class VehiclePhysicalParams7DOF:
         """[1/kg·m²] Inverse of wheel inertia"""
         return 1 / self.ir
 
+# @dataclass
+# class VehicleConfig7DOF:
+#     vehicle: VehiclePhysicalParams7DOF
+#     tire1: Dict[str, Any]
+#     tire2: Dict[str, Any]
+#     tire3: Dict[str, Any]
+#     tire4: Dict[str, Any]
+
+#     def build_tire_models(self) -> Dict[str, Any]:
+#         tire_models = {}
+#         for name, cfg in {
+#             "tire1": self.tire1,
+#             "tire2": self.tire2,
+#             "tire3": self.tire3,
+#             "tire4": self.tire4
+#         }.items():
+#             cfg = cfg.copy()  # avoid mutating the original dict
+#             model_name = cfg.pop("model")
+#             model_class = TIRE_MODEL_REGISTRY.get(model_name)
+#             if not model_class:
+#                 raise ValueError(f"Unknown tire model: {model_name}")
+#             tire_models[name] = model_class(cfg)
+#         return tire_models
+
+from dataclasses import dataclass
+from typing import Any, Dict
+
 @dataclass
 class VehicleConfig7DOF:
+    """
+    Configuration container for a 7-DOF vehicle model.
+
+    Attributes:
+        vehicle (VehiclePhysicalParams7DOF): Vehicle physical properties.
+        tire1, tire2, tire3, tire4: Tire parameter dataclasses
+            (e.g. LinearTireParams, SimplifiedPacejkaTireParams).
+    """
     vehicle: VehiclePhysicalParams7DOF
-    tire1: Dict[str, Any]
-    tire2: Dict[str, Any]
-    tire3: Dict[str, Any]
-    tire4: Dict[str, Any]
+    tire1: Any  # Union[LinearTireParams, SimplifiedPacejkaTireParams]
+    tire2: Any
+    tire3: Any
+    tire4: Any
 
     def build_tire_models(self) -> Dict[str, Any]:
-        tire_models = {}
-        for name, cfg in {
+        """
+        Construct tire models based on the type of tire parameters provided.
+
+        Returns:
+            Dict[str, Any]: Dictionary mapping tire names to model instances.
+        """
+        tire_models: Dict[str, Any] = {}
+        for name, params in {
             "tire1": self.tire1,
             "tire2": self.tire2,
             "tire3": self.tire3,
-            "tire4": self.tire4
+            "tire4": self.tire4,
         }.items():
-            cfg = cfg.copy()  # avoid mutating the original dict
-            model_name = cfg.pop("model")
-            model_class = TIRE_MODEL_REGISTRY.get(model_name)
-            if not model_class:
-                raise ValueError(f"Unknown tire model: {model_name}")
-            tire_models[name] = model_class(cfg)
+            model_class = TIRE_MODEL_REGISTRY.get(type(params))
+            if model_class is None:
+                raise ValueError(
+                    f"Unknown tire params type {type(params)!r}. "
+                    f"Must be one of {list(TIRE_MODEL_REGISTRY.keys())}"
+                )
+            tire_models[name] = model_class(params)
         return tire_models
+
 
 class DOF7(BaseVehicleModel):
     """
@@ -130,6 +188,19 @@ class DOF7(BaseVehicleModel):
         self.n_states: int = 10
         self.n_inputs: int = 6
         self.params = params
+        self.state_keys = {
+            "x": 0,
+            "vx": 1,
+            "y": 2,
+            "vy": 3,
+            "psi": 4,
+            "psidt": 5,
+            "omega1": 6,
+            "omega2": 7,
+            "omega3": 8,
+            "omega4": 9,
+        }
+
 
         for key, value in asdict(params.vehicle).items():
             setattr(self, key, value)
@@ -169,7 +240,7 @@ class DOF7(BaseVehicleModel):
         self.omega2dt = self.ir_inv * (t2 - fxp2 * self.r)
         self.omega3dt = self.ir_inv * (t3 - fxp3 * self.r)
         self.omega4dt = self.ir_inv * (t4 - fxp4 * self.r)
-
+        
     def get_faero(self, vx):
         return 0.5 * self.ra * self.s * self.cx * vx**2
 
@@ -228,7 +299,28 @@ class DOF7(BaseVehicleModel):
 
         self.get_state_derivatives(vx, vy, self.fx1, self.fx2, self.fx3, self.fx4, self.fy1, self.fy2, self.fy3, self.fy4, fxp1, fxp2, fxp3, fxp4, psi, psidt, t1, t2, t3, t4, faero)
 
-        return [self.xdt, self.vxdt, self.ydt, self.vydt, self.psidt, self.psidt2, self.omega1dt, self.omega2dt, self.omega3dt, self.omega4dt]
+        Fx = np.array([self.fx1, self.fx2, self.fx3, self.fx4], dtype=float)
+        Fy = np.array([self.fy1, self.fy2, self.fy3, self.fy4], dtype=float)
+        Fz = np.array([self.fz012, self.fz012, self.fz034, self.fz034], dtype=float)
+
+        kappa = np.array([self.sigma1, self.sigma2, self.sigma3, self.sigma4], dtype=float)
+        alpha = np.array([self.alpha1, self.alpha2, self.alpha3, self.alpha4], dtype=float)
+
+        outputs: Dict[str, np.ndarray] = {
+            # Tire-level
+            "Fx": Fx,
+            "Fy": Fy,
+            "Fz": Fz,
+            "kappa": kappa,
+            "alpha": alpha,
+            "Fx_aero": np.array([faero], dtype=float),
+            "ax": np.array([self.vxdt], dtype=float),
+            "ay": np.array([self.vydt], dtype=float),
+            "yaw_acc": np.array([self.psidt2], dtype=float),
+        }   
+        
+        return [self.xdt, self.vxdt, self.ydt, self.vydt, self.psidt, self.psidt2, self.omega1dt, self.omega2dt, self.omega3dt, self.omega4dt], outputs
+    
 if __name__ == "__main__":
 
     vehicle_params = VehiclePhysicalParams7DOF(

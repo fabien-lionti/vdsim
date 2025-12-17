@@ -1,0 +1,32 @@
+site_name: Vehicle Dynamics Simulator (VDSim)
+theme:
+  name: material
+  language: fr
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: orange
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: orange
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+
+nav:
+  - Accueil: index.md
+  - Référence:
+      - Analysis tools: reference/metrics.md
+      - Models tires: reference/models_tires.md
+      - Models vehicle: reference/models_vehicle.md
+      - Trajectories: reference/trajectories.md

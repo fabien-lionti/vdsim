@@ -1,9 +1,21 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple
+
 
 class BaseVehicleModel(ABC):
+    """
+        Abstract base class for vehicle dynamic models.
+
+        Subclasses must implement `get_dx__dt`, which defines the state-space
+        dynamics of the model. Time integration (Euler, RK4, etc.) is handled
+        externally in the `simulation.integrators` module.
+    """
     def __init__(self, params):
+        """
+        Args:
+            params: Model-specific parameter container (dataclass, dict, etc.).
+        """
         self.params = params
 
     @staticmethod
@@ -37,8 +49,8 @@ class BaseVehicleModel(ABC):
 
         Formula (simplified cases):
             - Perfect rolling:    sigma = 0
-            - Traction (drive):   sigma = (r * w - vxp) / (r * |w|), clamped to max 1
-            - Braking (drag):     sigma = (r * w - vxp) / |vxp|, clamped to min -1
+            - Traction (drive):   clamped to max 1
+            - Braking (drag):     clamped to min -1
 
         Args:
             vxp (float): Longitudinal velocity of the contact point [m/s]
@@ -47,67 +59,37 @@ class BaseVehicleModel(ABC):
 
         Returns:
             float: Longitudinal slip ratio in range [-1, 1]
-                - Positive → traction
-                - Negative → braking
-                - Zero → pure rolling
+                - Positive - traction
+                - Negative - braking
+                - Zero - pure rolling
         """
-        wr = w * r
-        # Case 1: Perfect rolling — the wheel speed matches ground speed exactly
-        if np.isclose(wr, vxp):
-            return 0.0
-        # Case 2: Traction phase — wheel is spinning faster than the ground speed (acceleration)
-        elif wr > vxp:
-            # Edge case: wheel is stopped, but car is moving, infinite slip, return maximum (1.0)
-            if np.isclose(w, 0.0):
-                return 1.0
-            sigma = (wr - vxp) / (r * abs(w))
-            # Clamp the result to avoid exceeding physical bounds (e.g., bad data or extreme torque)
-            return min(sigma, 1.0)
-        # Case 3: Braking phase — the wheel is rotating slower than the ground speed
-        else:
-            # Edge case: ground speed is zero, but wheel is turning → infinite braking slip
-            if np.isclose(vxp, 0.0):
-                return -1.0
-            sigma = (wr - vxp) / abs(vxp)
-            return max(sigma, -1.0)
+        
+        eps=1e-3
+        wr = w * r  # vitesse périphérique de la roue
+        v_ref = max(abs(vxp), eps)  # évite la division par zéro
+        sigma = (wr - vxp) / v_ref
+        return max(min(sigma, 1.0), -1.0)
         
     def get_dx__dt(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         pass
-        
-    def euler_integration(self, x0, u: np.ndarray, time_array: np.ndarray) -> np.ndarray:
+
+    @abstractmethod
+    def get_dx__dt(
+        self,
+        x: np.ndarray,
+        u: np.ndarray,
+        ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
-        Perform Euler integration with time-varying control inputs.
+        Compute state derivatives and all physical outputs at the current step.
 
         Args:
-            x0: Initial state (np.ndarray)
-            u: Control input array of shape (T, n_inputs)
-            time_array: Time vector of shape (T,)
+            x (np.ndarray): Current state vector, shape (n_states,).
+            u (np.ndarray): Current control input vector, shape (n_inputs,).
 
         Returns:
-            Trajectory: np.ndarray of shape (T, n_states)
+            Tuple[np.ndarray, Dict[str, np.ndarray]]:
+                - dx (np.ndarray): State derivatives dx/dt, shape (n_states,).
+                - outputs (Dict[str, np.ndarray]): Physical variables to be logged,
+                  such as tire forces, slips, accelerations, aero forces, angles, etc.
         """
-        dt = time_array[1] - time_array[0]
-        x = np.array(x0, dtype=float)
-        traj = [x.copy()]
-
-        for i in range(1, len(time_array)):
-            control_i = u[i - 1]
-            dx = self.get_dx__dt(x, control_i)
-            x += dt * np.asarray(dx)
-            traj.append(x.copy())
-
-        return np.stack(traj)
-
-
-    def rk4_integration(self, x0, u, time_array):
-        dt = time_array[1] - time_array[0]
-        x = np.array(x0)
-        traj = [x.copy()]
-        for _ in time_array[1:]:
-            k1 = self.get_state_derivative(x, u)
-            k2 = self.get_state_derivative(x + 0.5 * dt * k1, u)
-            k3 = self.get_state_derivative(x + 0.5 * dt * k2, u)
-            k4 = self.get_state_derivative(x + dt * k3, u)
-            x += (dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
-            traj.append(x.copy())
-        return np.stack(traj)
+        raise NotImplementedError

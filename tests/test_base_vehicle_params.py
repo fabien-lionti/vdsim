@@ -1,29 +1,36 @@
-from vehicle_sim.base.params_base import BaseVehicleParams
+import numpy as np
 import pytest
+from models.vehicle.base_model import BaseVehicleModel
 
-def test_valid_input_creates_base_params():
-    input_dict = {
-        "m": 1600.0,
-        "Iz": 3200.0,
-        "R": 0.32,
-        "J": 1.4
-    }
+def test_get_slipping_angle_zero_vx():
+    """Slip angle must be zero when the longitudinal speed is zero."""
+    vx = 0
+    vy_array = np.arange(0, 10, 10)
+    delta_array = np.arange(-15 * np.pi/180, 15 * np.pi/180, 10)
+    for vy in vy_array:
+        for delta in delta_array:
+            angle = BaseVehicleModel.get_slipping_angle(vx, vy, delta)
+            assert angle == 0.0
 
-    params = BaseVehicleParams.from_dict(input_dict)
-    assert isinstance(params, BaseVehicleParams)
-    assert params.m == 1600.0
-    assert params.R == 0.32
+def test_get_slipping_angle_nonzero_vx():
+    vx = 10
+    vy = 1
+    delta = 5 * np.pi/180
+    angle = BaseVehicleModel.get_slipping_angle(vx, vy, delta)
+    expected = delta - np.arctan(vy / vx)
+    assert np.isclose(angle, expected)
 
-def test_missing_fields_raise_error():
-    input_dict = {
-        "m": 1600.0,
-        "Iz": 3200.0,
-        # Missing R and J
-    }
-
-    with pytest.raises(ValueError) as excinfo:
-        BaseVehicleParams.from_dict(input_dict)
-    assert "Missing keys" not in str(excinfo.value)
+@pytest.mark.parametrize("vxp, w, r, expected", [
+    (10.0, 10.0, 1.0, 0.0),   # Perfect rolling 
+    (0.0, 12.0, 1.0, 1.0),   # Perfect Traction (vx < wr)
+    (10.0, 0.0, 1.0, -1.0),   # Perfect Braking (vx > wr)
+])
+def test_get_slipping_rate(vxp, w, r, expected):
+    sigma = BaseVehicleModel.get_slipping_rate(vxp, w, r)
+    if isinstance(expected, float):
+        assert np.isclose(sigma, expected)
+    else:
+        assert sigma == expected
 
 if __name__ == "__main__":
     pytest.main([__file__])

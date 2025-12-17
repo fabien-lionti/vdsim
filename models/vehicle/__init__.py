@@ -1,1 +1,2 @@
-from models.vehicle.dof7_model import *
+from .dof7_model import *
+from .dof10_model import *
