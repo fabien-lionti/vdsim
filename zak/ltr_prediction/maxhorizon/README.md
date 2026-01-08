@@ -51,10 +51,35 @@ python scripts/train_all.py
 python scripts/plot_trajectories.py
 ```
 
+## Métriques d'évaluation
+
+### Régression
+- **RMSE** : Root Mean Square Error sur q50 (prédiction médiane)
+- **R²** : Coefficient de détermination sur q50
+
+### Détection de danger (Precision / Recall)
+
+Seuil de danger : **LTR > 0.7**
+
+| Métrique | Formule | Interprétation |
+|----------|---------|----------------|
+| **Precision** | TP / (TP + FP) | Parmi les alertes levées, combien sont justifiées ? |
+| **Recall** | TP / (TP + FN) | Parmi les situations dangereuses, combien sont détectées ? |
+
+Où :
+- **TP** (True Positive) : LTR prédit > 0.7 ET LTR réel > 0.7
+- **FP** (False Positive) : LTR prédit > 0.7 ET LTR réel ≤ 0.7 (fausse alarme)
+- **FN** (False Negative) : LTR prédit ≤ 0.7 ET LTR réel > 0.7 (danger manqué)
+
+### Régression quantile
+
+Tous les modèles (MLP, LSTM, PatchTST) sont entraînés avec une **loss quantile** (pinball loss) et sortent 3 valeurs :
+- **q10** : 10ème percentile (borne basse)
+- **q50** : médiane (utilisée pour RMSE, R², precision, recall)
+- **q90** : 90ème percentile (borne haute)
+
+L'intervalle [q10, q90] forme une bande de confiance à 80%.
+
 ## Résultats
 
 Voir `outputs/comparaison_modeles.png` et `outputs/results.json`.
-
-## TODO
-
-Implémenter la tâche officielle : prédire LTR(t+h) pour h ∈ {1, 2, 4, 6, 8}s avec les 4 configurations de dataset (D1-D4).
