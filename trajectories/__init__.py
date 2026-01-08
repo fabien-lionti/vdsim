@@ -6,7 +6,8 @@ from .library import (
     SlalomTrajectory,
     DoubleLaneChangeTrajectory,
     CircleTrajectory,
-    LemniscateTrajectory
+    LemniscateTrajectory,
+    WaypointTrajectory
 )
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "SlalomTrajectory",
     "DoubleLaneChangeTrajectory",
     "CircleTrajectory",
-    "LemniscateTrajectory"
+    "LemniscateTrajectory",
+    "WaypointTrajectory"
 ]

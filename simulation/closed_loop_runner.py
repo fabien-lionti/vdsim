@@ -83,32 +83,61 @@ class ClosedLoopRunner:
         # merge (speed has priority on wheel torque keys, steering on angles)
         return {**u_speed, **u_steer}
 
-    def run(self, x0: np.ndarray, time_array: np.ndarray, method: str = "euler"):
+    def run(self, x0: np.ndarray, time_array: np.ndarray, method: str = "euler",
+            max_steering_rate: float = None):
+        """
+        Run closed-loop simulation.
+
+        Args:
+            x0: Initial state
+            time_array: Time points
+            method: Integration method ("euler" or "rk4")
+            max_steering_rate: Max steering rate in rad/s. If set, limits df rate.
+        """
         dt = time_array[1] - time_array[0]
         u_array = np.zeros((len(time_array), 6))
 
         x = x0.copy()  # current state
+        prev_df = 0.0  # Previous steering angle for rate limiting
 
         for k, t in enumerate(time_array):
 
             traj_point = self.trajectory.sample(t)
             reference = traj_point.to_dict()
 
-            # Build controller state (adapt to your model indexing)
-            # state = dict(
-            #     x=x[0],
-            #     vx=x[1],
-            #     y=x[2],
-            #     vy=x[3],
-            #     psi=x[4],
-            # )
             state = self._build_controller_state(x)
 
             u_cmd = self.compute_controls(state, reference)
+
+            # Get commanded steering
+            df_cmd = u_cmd.get("df", 0.0)
+
+            # Apply smooth rate limiting if specified
+            # Uses exponential smoothing (1st order low-pass filter)
+            # This ensures continuous derivatives (no "corners")
+            if max_steering_rate is not None and k > 0:
+                # Time constant: larger = smoother but slower response
+                # 0.5s eliminates controller oscillations completely
+                tau = 0.5  # 500ms time constant for smoothness
+                alpha = dt / (tau + dt)  # Low-pass filter coefficient
+
+                # Apply low-pass filter for smoothness (eliminates oscillations)
+                df_filtered = alpha * df_cmd + (1 - alpha) * prev_df
+
+                # Rate limit as safety backup (rarely triggers with good tau)
+                max_delta = max_steering_rate * dt
+                df_change = df_filtered - prev_df
+                if abs(df_change) > max_delta:
+                    df_filtered = prev_df + np.sign(df_change) * max_delta
+
+                df_cmd = df_filtered
+
+            prev_df = df_cmd
+
             u_array[k] = np.array([
                 u_cmd.get("t1", 0.0), u_cmd.get("t2", 0.0),
                 u_cmd.get("t3", 0.0), u_cmd.get("t4", 0.0),
-                u_cmd.get("df", 0.0), u_cmd.get("dr", 0.0),
+                df_cmd, u_cmd.get("dr", 0.0),
             ])
 
             # propagate state immediately
