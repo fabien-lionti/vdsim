@@ -68,7 +68,7 @@ FEATURES = ['vx', 'vy', 'psi', 'psi_dot', 'phi', 'theta', 'delta_f', 'delta_f_do
 N_FEATURES = len(FEATURES)
 
 # Jeux de donnees a entrainer
-DATASETS = ['D1', 'D4']
+DATASETS = ['D2', 'D3']  # D1 et D4 deja entraines
 
 # Configuration des splits train/test
 DATASET_CONFIGS = {
@@ -76,6 +76,16 @@ DATASET_CONFIGS = {
         'train_threshold': 0.7,
         'test_above': False,
         'desc': 'In-distribution (train/test LTR <= 0.7)'
+    },
+    'D2': {
+        'train_threshold': 0.7,
+        'test_above': True,
+        'desc': 'OOD (train <= 0.7, test > 0.7)'
+    },
+    'D3': {
+        'train_threshold': 0.8,
+        'test_above': True,
+        'desc': 'OOD (train <= 0.8, test > 0.8)'
     },
     'D4': {
         'train_threshold': 0.9,
