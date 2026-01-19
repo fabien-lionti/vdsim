@@ -48,23 +48,23 @@ from trajectories import (
 
 DT = 0.01
 T_SIMU = 15.0
-MAX_STEERING_RATE = np.radians(25.0)  # Comme les anciens scenarios
+MAX_STEERING_RATE = np.radians(25.0) 
 
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_DIR = SCRIPT_DIR.parent / "data_new"
 
 # Quotas par type (objectif ~700 scenarios)
-# Retire rampret (redondant avec single/circle)
+
 TYPE_QUOTAS = {
     "circle": 150,
     "single": 100,
-    "lemniscate": 60,    # Figure en 8 (ancien "slalom")
+    "lemniscate": 60,    # Figure en 8
     "slalom": 80,        # Vrai slalom sinusoidal
     "dlc": 100,
     "waypoint": 150      # Trajectoires aleatoires par waypoints
 }
 
-# Quotas par plage LTR (objectif raw_v8)
+# Quotas par plage LTR 
 LTR_QUOTAS = {
     (0.0, 0.3): 50,
     (0.3, 0.5): 70,
