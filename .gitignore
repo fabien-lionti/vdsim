@@ -78,3 +78,31 @@ dmypy.json
 # Ignore local JSON/YAML configs
 *.local.*
 *.secret.*
+
+# Local backups / archives (snapshots historiques, hors périmètre rapport)
+.venv_backup/
+_archive_root/
+**/_archive*/
+
+# Personal AI assistant instructions (not project doc)
+CLAUDE.md
+AGENTS.md
+
+# Datasets simulés non-calibrés (phase initiale, remplacée par calibration DOF10v2)
+psc/ltr_prediction/data_v1_484/
+psc/_archive/scenario_generation_phase1/
+
+# Caches lourds (régénérables depuis les scripts)
+*.npz
+*.npy
+*.pkl
+*.pt
+
+# Modèles XGBoost (régénérables, exclus du repo)
+XGBoost_*.json
+
+# Rapport sur Overleaf (déjà dans psc/.gitignore mais redondance utile)
+psc/rapport_final/
+
+# Build doc (mkdocs)
+site/
