@@ -9,6 +9,7 @@ from .library import (
     LemniscateTrajectory,
     WaypointTrajectory
 )
+from .smooth_random import SmoothRandomTrajectory
 
 __all__ = [
     "BaseTrajectory",
@@ -18,5 +19,6 @@ __all__ = [
     "DoubleLaneChangeTrajectory",
     "CircleTrajectory",
     "LemniscateTrajectory",
-    "WaypointTrajectory"
+    "WaypointTrajectory",
+    "SmoothRandomTrajectory",
 ]
