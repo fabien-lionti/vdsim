@@ -1,0 +1,34 @@
+# Caches et données volumineuses
+*.npz
+*.npy
+
+# Modèles entraînés (régénérables)
+*.pt
+*.pkl
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Overleaf / LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Optuna
+*.db
+
+# Rapport final (sur Overleaf, pas dans le git)
+rapport_final/
+
+# Données réelles (confidentielles DGA)
+heavy_vehicle/ltr_prediction/cache_*
+heavy_vehicle/ltr_prediction/data/

@@ -1,0 +1,10 @@
+\begin{tabular}{lccc}
+\toprule
+Condition & Paramètres & AUC-PR (0\% réel) & AUC-PR (25\% réel) \\
+\midrule
+LSTM base ($h=64$) & 21k & 0.619 $\pm$ 0.000 & 0.850 $\pm$ 0.010 \\
+LSTM big ($h=128$) & 79k & 0.594 $\pm$ 0.000 & 0.845 $\pm$ 0.011 \\
+LSTM big + random ($h=128$, input 25) & 87k & 0.627 $\pm$ 0.000 & 0.850 $\pm$ 0.006 \\
+\textbf{LSTM + NODE} & \textbf{96k} & 0.757 $\pm$ 0.000 & 0.904 $\pm$ 0.007 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,71 @@
+{
+  "hpo_LSTM_NODE_D2_h2s": {
+    "total_trials": 50,
+    "complete": 18,
+    "pruned": 32,
+    "best_trial": 37,
+    "best_value": 0.887176,
+    "best_params": {
+      "physics_proj_dim": 16,
+      "lr_projection": 0.00039394842246496387,
+      "lr_other": 0.00029901235219721175,
+      "batch_size": 128,
+      "hidden_size": 128,
+      "num_layers": 1,
+      "fc_hidden": 64,
+      "dropout": 0.3037341463595793
+    }
+  },
+  "hpo_PatchTST_NODE_D2_h2s": {
+    "total_trials": 10,
+    "complete": 6,
+    "pruned": 3,
+    "best_trial": 1,
+    "best_value": 0.851212,
+    "best_params": {
+      "physics_proj_dim": 48,
+      "lr_projection": 0.001215251334398902,
+      "lr_other": 0.00014808945119975197,
+      "batch_size": 128,
+      "patch_size": 10,
+      "d_model": 128,
+      "nhead": 2,
+      "num_layers": 3,
+      "dim_ff_mult": 2
+    }
+  },
+  "hpo_LSTM_NODE_D2_h2s_round2": {
+    "total_trials": 46,
+    "complete": 22,
+    "pruned": 21,
+    "best_trial": 10,
+    "best_value": 0.886717,
+    "best_params": {
+      "activation": "gelu",
+      "weight_decay": 2.7897718415877487e-06,
+      "lr_projection": 0.0009596154372397141,
+      "lr_other": 0.0007724258379563629,
+      "dropout": 0.37852450729416254,
+      "batch_size": 256,
+      "seq_len": 100,
+      "proj_depth": 2,
+      "sched_patience": 5,
+      "use_adamw": false
+    }
+  },
+  "hpo_LSTM_NODE_D2_h2s_round3_seqlen": {
+    "total_trials": 11,
+    "complete": 9,
+    "pruned": 1,
+    "best_trial": 9,
+    "best_value": 0.891539,
+    "best_params": {
+      "seq_len": 200,
+      "weight_decay": 2.1757874324652128e-07,
+      "lr_projection": 0.0005860931351433253,
+      "lr_other": 0.0008897686555600107,
+      "dropout": 0.4760969318230211,
+      "batch_size": 128
+    }
+  }
+}

@@ -1,0 +1,23 @@
+\begin{tabular}{llcccc}
+\toprule
+Configuration & Pipeline & AUC-PR & $R^2$ & Rappel & Précision \\
+\midrule
+\multirow{2}{*}{D2, $h=1$s} & Real-only 100\% & 0.854 $\pm$ 0.014 & 0.74 $\pm$ 0.01 & 0.75 $\pm$ 0.03 & 0.76 $\pm$ 0.02 \\
+ & Pseudo-replay + 25\% & 0.809 $\pm$ 0.013 & 0.65 $\pm$ 0.03 & 0.73 $\pm$ 0.01 & 0.70 $\pm$ 0.03 \\
+\midrule
+\multirow{2}{*}{D2, $h=2$s} & Real-only 100\% & 0.836 $\pm$ 0.000 & 0.60 $\pm$ 0.00 & 0.75 $\pm$ 0.00 & 0.72 $\pm$ 0.00 \\
+ & Pseudo-replay + 25\% & 0.813 $\pm$ 0.007 & 0.56 $\pm$ 0.02 & 0.75 $\pm$ 0.02 & 0.68 $\pm$ 0.02 \\
+\midrule
+\multirow{2}{*}{D2, $h=4$s} & Real-only 100\% & 0.801 $\pm$ 0.010 & 0.37 $\pm$ 0.01 & 0.72 $\pm$ 0.02 & 0.71 $\pm$ 0.03 \\
+ & Pseudo-replay + 25\% & 0.781 $\pm$ 0.009 & 0.35 $\pm$ 0.04 & 0.72 $\pm$ 0.01 & 0.69 $\pm$ 0.02 \\
+\midrule
+\multirow{2}{*}{D4, $h=1$s} & Real-only 100\% & 0.932 $\pm$ 0.000 & 0.84 $\pm$ 0.00 & 0.82 $\pm$ 0.00 & 0.82 $\pm$ 0.00 \\
+ & Pseudo-replay + 25\% & 0.871 $\pm$ 0.010 & 0.72 $\pm$ 0.02 & 0.78 $\pm$ 0.02 & 0.76 $\pm$ 0.02 \\
+\midrule
+\multirow{2}{*}{D4, $h=2$s} & Real-only 100\% & 0.916 $\pm$ 0.000 & 0.74 $\pm$ 0.00 & 0.77 $\pm$ 0.00 & 0.78 $\pm$ 0.00 \\
+ & Pseudo-replay + 25\% & 0.850 $\pm$ 0.010 & 0.57 $\pm$ 0.03 & 0.80 $\pm$ 0.02 & 0.71 $\pm$ 0.02 \\
+\midrule
+\multirow{2}{*}{D4, $h=4$s} & Real-only 100\% & 0.893 $\pm$ 0.003 & 0.55 $\pm$ 0.02 & 0.78 $\pm$ 0.01 & 0.84 $\pm$ 0.00 \\
+ & Pseudo-replay + 25\% & 0.832 $\pm$ 0.012 & 0.42 $\pm$ 0.03 & 0.77 $\pm$ 0.03 & 0.72 $\pm$ 0.01 \\
+\bottomrule
+\end{tabular}
